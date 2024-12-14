@@ -1,5 +1,5 @@
-import sys
 from random import choice, randrange
+from sys import exit
 from typing import Union, Optional
 import pygame as pg
 
@@ -194,7 +194,7 @@ def handle_keys(game_object) -> None:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
-            sys.exit()
+            exit()
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_UP and game_object.direction != DOWN:
                 game_object.direction = UP
@@ -206,7 +206,7 @@ def handle_keys(game_object) -> None:
                 game_object.direction = RIGHT
             elif event.key == pg.K_ESCAPE:
                 pg.quit()
-                sys.exit()
+                exit()
             game_object.update_direction(game_object.direction)
 
 
