@@ -1,6 +1,8 @@
 from random import choice, randrange
 from sys import exit
-from typing import Union, Optional
+
+from typing import Optional, Union
+
 import pygame as pg
 
 
@@ -73,7 +75,7 @@ class Apple(GameObject):
     """
     Класс описывающий яблоко и действия с ним.
 
-    Атрибуты: position: list, body_color: tuple.
+    Атрибуты: body_color: tuple, occuped_positions: list.
     Методы:
     randomize_position(occuped_positions: list) - определяет положение яблока,
     draw() - отрисовывает яблоко.
@@ -81,10 +83,11 @@ class Apple(GameObject):
 
     def __init__(self,
                  body_color: tuple = APPLE_COLOR,
-                 position: Union[tuple, list] = []) -> None:
-        super().__init__()
-        self.body_color = body_color
-        self.randomize_position(position)
+                 occuped_positions: Union[list, None] = None) -> None:
+        if occuped_positions is None:
+            occuped_positions = []
+        super().__init__(body_color)
+        self.randomize_position(occuped_positions)
 
     def randomize_position(self, occuped_positions: list) -> None:
         """
@@ -106,7 +109,7 @@ class Stone(Apple):
     """
     Класс описывающий камень и действия с ним.
 
-    Атрибуты: body_color: tuple, position: list.
+    Атрибуты: body_color: tuple, occuped_positions: list.
     Методы:
     randomize_position(occuped_positions: list) - определяет положение камня,
     draw() - отрисовывает камень.
@@ -114,10 +117,8 @@ class Stone(Apple):
 
     def __init__(self,
                  body_color: tuple = STONE_COLOR,
-                 position: Union[tuple, list] = []) -> None:
-        super().__init__()
-        self.body_color = body_color
-        self.randomize_position(position)
+                 occuped_positions: Union[list, None] = None) -> None:
+        super().__init__(body_color, occuped_positions)
 
 
 class Snake(GameObject):
@@ -139,7 +140,6 @@ class Snake(GameObject):
         self.length = 1
         self.positions = [self.position]
         self.direction = RIGHT
-        self.body_color = body_color
         self.last = None
 
     def update_direction(self, direction) -> None:
@@ -197,17 +197,16 @@ def handle_keys(game_object) -> None:
             exit()
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_UP and game_object.direction != DOWN:
-                game_object.direction = UP
+                game_object.update_direction(UP)
             elif event.key == pg.K_DOWN and game_object.direction != UP:
-                game_object.direction = DOWN
+                game_object.update_direction(DOWN)
             elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
-                game_object.direction = LEFT
+                game_object.update_direction(LEFT)
             elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
-                game_object.direction = RIGHT
+                game_object.update_direction(RIGHT)
             elif event.key == pg.K_ESCAPE:
                 pg.quit()
                 exit()
-            game_object.update_direction(game_object.direction)
 
 
 def main():
@@ -216,8 +215,8 @@ def main():
     screen.fill(BOARD_BACKGROUND_COLOR)
 
     snake = Snake()
-    apple = Apple(position=snake.positions)
-    stone = Stone(position=(snake.positions + [apple.position]))
+    apple = Apple(occuped_positions=snake.positions)
+    stone = Stone(occuped_positions=([*snake.positions, apple.position]))
 
     while True:
         clock.tick(SPEED)
@@ -233,15 +232,15 @@ def main():
 
         if apple.position == snake.get_head_position():
             snake.length += 1
-            apple.randomize_position(snake.positions)
+            apple.randomize_position([*snake.positions, stone.position])
             apple.draw()
-        elif snake.get_head_position() in snake.positions[3:]:
+        elif snake.get_head_position() in snake.positions[4:]:
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
         elif stone.position == snake.get_head_position():
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
-            stone.randomize_position(snake.positions + [apple.position])
+            stone.randomize_position([*snake.positions, apple.position])
             stone.draw()
 
         pg.display.update()
