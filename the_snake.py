@@ -1,6 +1,5 @@
 from random import choice, randrange
 from sys import exit
-
 from typing import Optional, Union
 
 import pygame as pg
@@ -22,12 +21,14 @@ BLACK_COLOR = (0, 0, 0)
 RED_COLOR = (220, 20, 60)
 GREEN_COLOR = (34, 139, 34)
 GRAY_COLOR = (105, 105, 105)
+YELLOW_COLOR = (255, 255, 0)
 
 BOARD_BACKGROUND_COLOR = WHITE_COLOR
 BORDER_COLOR = BLACK_COLOR
 APPLE_COLOR = RED_COLOR
 SNAKE_COLOR = GREEN_COLOR
 STONE_COLOR = GRAY_COLOR
+WRONG_FOOD_COLOR = YELLOW_COLOR
 
 SPEED = 15
 
@@ -117,6 +118,22 @@ class Stone(Apple):
 
     def __init__(self,
                  body_color: tuple = STONE_COLOR,
+                 occuped_positions: Union[list, None] = None) -> None:
+        super().__init__(body_color, occuped_positions)
+
+
+class WrongFood(Apple):
+    """
+    Класс описывающий неправильную еду и действия с ней.
+
+    Атрибуты: body_color: tuple, occuped_positions: list.
+    Методы:
+    randomize_position(occuped_positions: list) - определяет положение еды,
+    draw() - отрисовывает еду.
+    """
+
+    def __init__(self,
+                 body_color: tuple = WRONG_FOOD_COLOR,
                  occuped_positions: Union[list, None] = None) -> None:
         super().__init__(body_color, occuped_positions)
 
@@ -217,6 +234,12 @@ def main():
     snake = Snake()
     apple = Apple(occuped_positions=snake.positions)
     stone = Stone(occuped_positions=([*snake.positions, apple.position]))
+    wrong_food = WrongFood(
+        occuped_positions=[*snake.positions, apple.position, stone.position])
+
+    flags = {
+        'wrong_food': True,
+    }
 
     while True:
         clock.tick(SPEED)
@@ -230,6 +253,12 @@ def main():
 
         snake.move()
 
+        if snake.length > 3 and flags.get('wrong_food'):
+            wrong_food.randomize_position(
+                [*snake.positions, apple.position, stone.position])
+            wrong_food.draw()
+            flags['wrong_food'] = False
+
         if apple.position == snake.get_head_position():
             snake.length += 1
             apple.randomize_position([*snake.positions, stone.position])
@@ -242,6 +271,12 @@ def main():
             screen.fill(BOARD_BACKGROUND_COLOR)
             stone.randomize_position([*snake.positions, apple.position])
             stone.draw()
+        elif wrong_food.position == snake.get_head_position():
+            snake.length -= 1
+            snake.create_rectangle(snake.positions.pop(),
+                                   BOARD_BACKGROUND_COLOR)
+            flags['wrong_food'] = True
+            wrong_food.position = ()
 
         pg.display.update()
 
